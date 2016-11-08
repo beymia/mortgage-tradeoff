@@ -3,14 +3,14 @@ library(zoo)
 
 ui <- fluidPage(
 
-    titlePanel("[Synethic future's app]"),
+    titlePanel("[Synthetic future's app]"),
 
     inputPanel(
-        sliderInput("rate", "Annual Interest Rate (%)", min = 1, max = 30,
+        sliderInput("call", "Price of Call", min = 1, max = 30,
                     value = 5, step = .5, animate = TRUE),
-        sliderInput("years", "Mortgage Term (Years)", min = 10, max = 50,
+        sliderInput("put", "Price of Strike", min = 10, max = 50,
                     value = 25, step = 1, animate = TRUE),
-        sliderInput("loan", "Loan Amount", min = 0, max = 500000,
+        sliderInput("strike", "Price of Strike", min = 0, max = 500000,
                     value = 200000, step = 20000, animate = TRUE)
     ),
 
