@@ -3,7 +3,7 @@ library(zoo)
 
 ui <- fluidPage(
 
-    titlePanel("[INSERT TITLE]"),
+    titlePanel("[Synethic future's app]"),
 
     inputPanel(
         sliderInput("rate", "Annual Interest Rate (%)", min = 1, max = 30,
