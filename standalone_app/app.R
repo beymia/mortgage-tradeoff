@@ -6,20 +6,21 @@ ui <- fluidPage(
     titlePanel("[Synthetic future's app]"),
 
     inputPanel(
-        sliderInput("call", "Price of Call", min = 1, max = 30,
-                    value = 5, step = .5, animate = TRUE),
-        sliderInput("put", "Price of Strike", min = 10, max = 50,
-                    value = 25, step = 1, animate = TRUE),
-        sliderInput("strike", "Price of Strike", min = 0, max = 500000,
-                    value = 200000, step = 20000, animate = TRUE)
+        sliderInput("call140", "Price of $1.40 Call", min = .01, max = 0.50,
+                    value = .09, step = .01, animate = TRUE),
+        sliderInput("call150", "Price of $1.50 Call", min = .01, max = 0.50,
+                    value = .04, step = .01, animate = TRUE),
+        sliderInput("put140", "Price of $1.40 Put", min = .01, max = .50,
+                    value = .03, step = .01, animate = TRUE),
+        sliderInput("put150", "Price of $1.50 Put", min = .01, max = .50,
+                    value = .12, step = .01, animate = TRUE)
+    
     ),
 
     mainPanel(
         tabsetPanel(type = "pills",
-            tabPanel(title = "Cumulative Principal", plotlyOutput("cumPrinOut")),
-            tabPanel(title = "Percent of Home Owned", plotlyOutput("perOwnedOut")),
-            tabPanel(title = "Monthly Interest Paid", plotlyOutput("intOut")),
-            tabPanel(title = "Cumulative Interest", plotlyOutput("cumIntOut"))
+            tabPanel(title = "Synthetic future's", plotlyOutput("cumPrinOut"))
+           
         ),
         img(src="mi.png")#, height = 400, width = 400)
     )
@@ -29,99 +30,14 @@ server <- function(input, output) {
 
     dataInput <- reactive({
 
-        ## use Girke's mortgage amortization from here
-        ## source("http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/mortgage.R")
-        ## Author: Thomas Girke
-                                        #{{{
-
         
-        mortgage(P = input$loan, I = input$rate, L = input$years, amort=T, plotData=F)
-
-        months <- 1:(12 * input$years)
-        cumPrin <- cumsum(aDFmonth$Monthly_Principal)
-        cumPrin.zoo <- zoo(cumPrin, months)
-
-        percentHomeOwned <- cumPrin / input$loan
-        percentHomeOwned.zoo <- zoo(percentHomeOwned, months)
-
-        monthlyInt <- aDFmonth$Monthly_Interest
-        monthlyInt.zoo <- zoo(monthlyInt, months)
-        
-        cumInt <- cumsum(aDFmonth$Monthly_Interest)
-        cumInt.zoo <- zoo(cumInt, months)
-
-        ## do i use this anywhere anymore -- if not :delete:
-        data2plot <- data.frame(cbind(months, cumPrin, percentHomeOwned, monthlyInt, cumInt))
-        names(data2plot) <- c("Months", "Cumulative_Principal", "Percent_of_Home_Owned", "Monthly_Interest",  "Cumulative_Interest")
-        
-        ## Also calculate each for 15 and 30 year mortgages and add them to plot ----
-
-        ## 15 year
-        
-        mortgage(P = input$loan, I = input$rate, L = 15, amort=T, plotData=F)
-
-        months.15 <- 1:(12 * 15)
-        cumPrin.15 <- cumsum(aDFmonth$Monthly_Principal)
-        cumPrin.15.zoo <- zoo(cumPrin.15, months.15)
-
-        percentHomeOwned.15 <- cumPrin.15 / input$loan
-        percentHomeOwned.15.zoo <- zoo(percentHomeOwned.15, months.15)
-
-        monthlyInt.15 <- aDFmonth$Monthly_Interest
-        monthlyInt.15.zoo <- zoo(monthlyInt.15, months.15)
-        
-        cumInt.15 <- cumsum(aDFmonth$Monthly_Interest)
-        cumInt.15.zoo <- zoo(cumInt.15, months.15)
-
-        data2plot.15 <- data.frame(cbind(months.15, cumPrin.15, percentHomeOwned.15, monthlyInt.15, cumInt.15))
-        names(data2plot.15) <- c("Months_15_Yr", "Cumulative_Principal_15_Yr", "Percent_of_Home_Owned_15_Yr", "Monthly_Interest_15_Yr",  "Cumulative_Interest_15_Yr")
-
-
-        ## 30 year
-        
-        mortgage(P = input$loan, I = input$rate, L = 30, amort=T, plotData=F)
-
-        months.30 <- 1:(12 * 30)
-        cumPrin.30 <- cumsum(aDFmonth$Monthly_Principal)
-        cumPrin.30.zoo <- zoo(cumPrin.30, months.30)
-
-        percentHomeOwned.30 <- cumPrin.30 / input$loan
-        percentHomeOwned.30.zoo <- zoo(percentHomeOwned.30, months.30)
-
-        monthlyInt.30 <- aDFmonth$Monthly_Interest
-        monthlyInt.30.zoo <- zoo(monthlyInt.30, months.30)
-        
-        cumInt.30 <- cumsum(aDFmonth$Monthly_Interest)
-        cumInt.30.zoo <- zoo(cumInt.30, months.30)
+        input$call140
+        input$call150
+        input$put140
+        input$put150
+         
         
         
-        data2plot.30 <- data.frame(cbind(months.30, cumPrin.30, percentHomeOwned.30, monthlyInt.30, cumInt.30))
-        names(data2plot.30) <- c("Months_30_Yr", "Cumulative_Principal_30_Yr", "Percent_of_Home_Owned_30_Yr", "Monthly_Interest_30_Yr",  "Cumulative_Interest_30_Yr")
-
-        ## plot each metric with 15 and 30 year
-        months <- zoo(1:(12 * max(30, input$years)), 1:(12 * max(30, input$years)))
-
-### data to plot for cumulative principal
-        data.cumPrin <- merge.zoo(cbind(months, cumPrin.zoo, cumPrin.15.zoo, cumPrin.30.zoo), all = TRUE, fill = NA)
-        data.cumPrin.df <- data.frame(data.cumPrin)
-        names(data.cumPrin.df) <- c("Months", "Cumulative_Principal", "Cumulative_Principal_15_Yr", "Cumulative_Principal_30_Yr")
-
-        data.percentHomeOwned <- merge.zoo(cbind(months, percentHomeOwned.zoo, percentHomeOwned.15.zoo, percentHomeOwned.30.zoo), all = TRUE, fill = NA)
-        data.percentHomeOwned.df <- data.frame(data.percentHomeOwned)
-        names(data.percentHomeOwned.df) <- c("Months", "Percent_Home_Owned", "Percent_Home_Owned_15_Yr", "Percent_Home_Owned_30_Yr")
-
-
-        data.monthyInt <- merge.zoo(cbind(months, monthlyInt.zoo, monthlyInt.15.zoo, monthlyInt.30.zoo), all = TRUE, fill = NA)
-        data.monthlyInt.df <- data.frame(data.monthyInt)
-        names(data.monthlyInt.df) <- c("Months", "Monthly_Interest", "Monthly_Interest_15_Yr", "Monthly_Interest_30_Yr")
-
-
-        data.cumInt <- merge.zoo(cbind(months, cumInt.zoo, cumInt.15.zoo, cumInt.30.zoo), all = TRUE, fill = NA)
-        data.cumInt.df <- data.frame(data.cumInt)
-        names(data.cumInt.df) <- c("Months", "Cumulative_Interest", "Cumulative_Interest_15_Yr", "Cumulative_Interest_30_Yr")
-
-
-
 ### List of data to be used in plots below -----
         theData <- list(forCumPrin = data.cumPrin.df, years = input$years, months = months, forPercentHomeOwned = data.percentHomeOwned.df, forMonthlyInt = data.monthlyInt.df, forCumInt = data.cumInt.df)
         
@@ -146,63 +62,7 @@ server <- function(input, output) {
         p
     })
 
-        output$perOwnedOut <- renderPlotly({
-        theData <- dataInput()
-        p <- plot_ly(
-            ## x = monthRange,
-            ## y = ratioPVCFLoan,
-            data = theData$forPercentHomeOwned,
-            x = ~Months,
-            y = ~Percent_Home_Owned,
-            xaxis = "Month",
-            type = "scatter",
-            mode = "lines",
-            name = paste0("Percent of Home Owned, ", theData$years, " Yr"), 
-            text = paste0("Percent of Home Owned: Month ", theData$months)
-        ) %>%
-            add_trace(y = ~Percent_Home_Owned_30_Yr, name = "Percent of Home Owned, 30 Yr") %>%
-            add_trace(y = ~Percent_Home_Owned_15_Yr, name = "Percent of Home Owned, 15 Yr")
-        p
-    })
-
-
-    output$intOut <- renderPlotly({
-        theData <- dataInput()
-        p <- plot_ly(
-            ## x = monthRange,
-            ## y = ratioPVCFLoan,
-            data = theData$forMonthlyInt,
-            x = ~Months,
-            y = ~Monthly_Interest,
-            xaxis = "Month",
-            type = "scatter",
-            mode = "lines",
-            name = paste0("Monthly Interest, ", theData$years, " Yr"), 
-            text = paste0("Monthly Interest: Month ", theData$months)
-        ) %>%
-            add_trace(y = ~Monthly_Interest_30_Yr, name = "Monthly Interest, 30 Yr") %>%
-            add_trace(y = ~Monthly_Interest_15_Yr, name = "Monthly Interest, 15 Yr")
-        p
-    })
-
-    output$cumIntOut <- renderPlotly({
-        theData <- dataInput()
-        p <- plot_ly(
-            ## x = monthRange,
-            ## y = ratioPVCFLoan,
-            data = theData$forCumInt,
-            x = ~Months,
-            y = ~Cumulative_Interest,
-            xaxis = "Month",
-            type = "scatter",
-            mode = "lines",
-            name = paste0("Cumulative Interest, ", theData$years, " Yr"), 
-            text = paste0("Cumulative Interest: Month ", theData$months)
-        ) %>%
-            add_trace(y = ~Cumulative_Interest_30_Yr, name = "Cumulative Interest, 30 Yr") %>%
-            add_trace(y = ~Cumulative_Interest_15_Yr, name = "Cumulative Interest, 15 Yr")
-        p
-    })
+       
 
     
 }
