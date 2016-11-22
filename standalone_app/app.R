@@ -36,6 +36,13 @@ server <- function(input, output) {
         input$put140
         input$put150
          
+# Definitions:
+        # CP1.50 = 1.50 call price 
+        # CF1.50 = 1.50 cash flow; formula: 
+        # SP= strike price
+        # CP1.40 = 1.40 call price
+        # CF1.40 = 1.40 cash flow 
+        # FP = forward price  
         
         
 ### List of data to be used in plots below -----
